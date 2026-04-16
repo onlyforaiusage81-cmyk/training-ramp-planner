@@ -649,7 +649,7 @@
       if (!webhookUrl) return;
 
       try {
-        const res = await fetch(webhookUrl, {
+        const res = await fetch("https://n8n-hnvg.onrender.com/webhook/training-ramp-batch-planner", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(window.__plannerPayload)
