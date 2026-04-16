@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Training Ramp & Batch Planner</title>
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#121a31;
+      --card:#ffffff;
+      --line:#e6ebf5;
+      --text:#172033;
+      --muted:#65708a;
+      --accent:#2563eb;
+      --accent2:#7c3aed;
+      --good:#16a34a;
+      --warn:#d97706;
+      --shadow:0 18px 50px rgba(15,23,42,.12);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124,58,237,.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(37,99,235,.14), transparent 28%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+    }
+    .wrap{max-width:1280px;margin:0 auto;padding:28px 18px 48px;}
+    .hero{
+      display:grid;grid-template-columns:1.2fr .8fr;gap:22px;align-items:stretch;margin-bottom:22px;
+    }
+    .hero-copy{
+      color:#fff;padding:12px 4px 0 4px;
+    }
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 14px;border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      color:#dbeafe;font-size:13px;margin-bottom:14px;
+    }
+    h1{
+      margin:0 0 12px;font-size:42px;line-height:1.02;letter-spacing:-1px;
+    }
+    .sub{
+      color:#c9d2e6;line-height:1.6;font-size:17px;max-width:720px;margin:0 0 18px;
+    }
+    .pills{display:flex;flex-wrap:wrap;gap:10px}
+    .pill{
+      padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);color:#eef2ff;font-size:13px;
+    }
+    .card{
+      background:rgba(255,255,255,.98);
+      border:1px solid rgba(255,255,255,.65);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .summary{
+      padding:24px;
+      display:grid;gap:16px;
+    }
+    .summary h2{margin:0;font-size:24px}
+    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .kpi{
+      border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:#fbfcff;
+    }
+    .kpi .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .kpi .value{font-size:22px;font-weight:800}
+    .layout{display:grid;grid-template-columns:1fr;gap:18px}
+    .section{
+      background:#fff;border:1px solid rgba(255,255,255,.7);
+      border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+    }
+    .section-head{
+      padding:18px 22px;border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;gap:14px;
+      background:linear-gradient(180deg,#ffffff,#fbfcff);
+    }
+    .section-title{margin:0;font-size:20px}
+    .section-note{color:var(--muted);font-size:13px;margin-top:4px}
+    .section-body{padding:18px 22px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .field{display:grid;gap:8px}
+    label{font-size:13px;font-weight:700}
+    .hint{font-size:12px;color:var(--muted);margin-top:-2px}
+    input[type=text],input[type=number],input[type=date],select{
+      width:100%;height:46px;border:1px solid var(--line);border-radius:14px;
+      padding:0 14px;font-size:15px;outline:none;background:#fff;transition:.2s ease;
+    }
+    input:focus,select:focus{
+      border-color:#9bbcfb;box-shadow:0 0 0 4px rgba(37,99,235,.12);
+    }
+    .check-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px}
+    .check{
+      display:flex;align-items:center;gap:10px;
+      border:1px solid var(--line);padding:12px 14px;border-radius:14px;background:#fbfcff;
+      min-height:46px;
+    }
+    .check input{width:18px;height:18px}
+    table{
+      width:100%;border-collapse:separate;border-spacing:0;
+      border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff;
+    }
+    thead th{
+      text-align:left;font-size:13px;padding:14px 12px;background:#f7f9fe;border-bottom:1px solid var(--line);
+    }
+    tbody td{
+      padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle;
+    }
+    tbody tr:last-child td{border-bottom:none}
+    td input, td select{height:40px;border-radius:12px}
+    .btns{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    .btn{
+      border:0;border-radius:14px;height:46px;padding:0 18px;font-weight:800;font-size:14px;cursor:pointer;
+      transition:.2s ease;
+    }
+    .btn-primary{
+      color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      box-shadow:0 12px 24px rgba(37,99,235,.22);
+    }
+    .btn-primary:hover,.btn-secondary:hover{transform:translateY(-1px)}
+    .btn-secondary{
+      background:#fff;color:#334155;border:1px solid var(--line);
+    }
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+      background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;
+    }
+    .muted{color:var(--muted)}
+    .footer-actions{
+      display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;
+      padding-top:10px;
+    }
+    .export-area{
+      background:#0f172a;color:#e2e8f0;border-radius:18px;padding:16px 18px;font-size:13px;line-height:1.6;
+    }
+    .site-block{
+      border:1px solid var(--line);border-radius:18px;padding:16px;background:#fcfdff;
+    }
+    .site-top{
+      display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;
+    }
+    .site-title{font-weight:800;font-size:17px}
+    .danger{
+      color:#b91c1c;border:1px solid #fecaca;background:#fff1f2;
+    }
+    .small{font-size:12px}
+    @media (max-width: 1100px){
+      .hero{grid-template-columns:1fr}
+      .grid-4{grid-template-columns:repeat(2,1fr)}
+      .grid-3{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width: 720px){
+      h1{font-size:32px}
+      .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
+      .kpis{grid-template-columns:1fr}
+      table{display:block;overflow-x:auto}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">⚙️ BPO Training Operations Frontend</div>
+        <h1>Training Ramp & Batch Planner</h1>
+        <p class="sub">
+          Capture site constraints, recruitment onboarding plans, holiday calendars, and optional disruption scenarios
+          through a clean frontend. Designed for multi-location BPO training operations where billing, go-live,
+          and delivery confidence depend on accurate batch planning.
+        </p>
+        <div class="pills">
+          <div class="pill">Recruitment-driven starts</div>
+          <div class="pill">Room & shift constraints</div>
+          <div class="pill">Trainer allocation</div>
+          <div class="pill">SME ratio for OJT</div>
+          <div class="pill">Holiday-aware go-live</div>
+        </div>
+      </div>
+
+      <div class="card summary">
+        <div>
+          <h2>Planner Snapshot</h2>
+          <div class="muted">This frontend prepares structured input for the batch planning engine and Excel output.</div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="label">Locations</div><div class="value" id="kpiSites">0</div></div>
+          <div class="kpi"><div class="label">Training Rooms</div><div class="value" id="kpiRooms">0</div></div>
+          <div class="kpi"><div class="label">Recruitment Intakes</div><div class="value" id="kpiIntakes">0</div></div>
+          <div class="kpi"><div class="label">Holiday Entries</div><div class="value" id="kpiHolidays">0</div></div>
+        </div>
+        <div class="chip">Primary focus: clean batch plan. Secondary optional focus: disruption replan.</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Global Planning Rules</h3>
+            <div class="section-note">Define rules that apply across the planner unless overridden by location setup.</div>
+          </div>
+          <div class="chip">Required</div>
+        </div>
+        <div class="section-body">
+          <div class="grid-4">
+            <div class="field">
+              <label>Process / Client Name</label>
+              <input type="text" placeholder="Example: Myntra" />
+            </div>
+            <div class="field">
+              <label>Planning Month</label>
+              <input type="text" placeholder="Example: June 2026" />
+            </div>
+            <div class="field">
+              <label>Throughput %</label>
+              <input type="number" value="85" min="1" max="100" />
+              <div class="hint">Used to calculate required intake from final floor-ready target.</div>
+            </div>
+            <div class="field">
+              <label>Working Model</label>
+              <select>
+                <option selected>6 Days (Mon–Sat)</option>
+                <option>5 Days (Mon–Fri)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-4" style="margin-top:16px">
+            <div class="field">
+              <label>Classroom Training Days</label>
+              <input type="number" value="15" />
+            </div>
+            <div class="field">
+              <label>Mock Certification Days</label>
+              <input type="number" value="1" />
+            </div>
+            <div class="field">
+              <label>OJT Days</label>
+              <input type="number" value="10" />
+            </div>
+            <div class="field">
+              <label>Result Day</label>
+              <input type="number" value="1" />
+              <div class="hint">Go-live is treated as next working day after result publication.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Site Setup</h3>
+            <div class="section-note">Enter one block per location. Trainers, shifts, ramp target, and SME setup are defined here.</div>
+          </div>
+          <div class="btns">
+            <button class="btn btn-secondary" type="button" onclick="addSite()">+ Add Location</button>
+          </div>
+        </div>
+        <div class="section-body" id="siteContainer"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Recruitment Intake Plan</h3>
+            <div class="section-note">These onboarding dates drive when a new batch can start. No recruitment commitment = no batch start.</div>
+          </div>
+          <div class="btns">
+            <button class="btn btn-secondary" type="button" onclick="addRow('recruitmentBody', recruitmentRow())">+ Add Intake Date</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Onboarding Date</th>
+                <th>Agents Available</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="recruitmentBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Holiday Calendar</h3>
+            <div class="section-note">Site-level holidays will be excluded from working day calculation.</div>
+          </div>
+          <div class="btns">
+            <button class="btn btn-secondary" type="button" onclick="addRow('holidayBody', holidayRow())">+ Add Holiday</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Holiday Date</th>
+                <th>Holiday Name</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="holidayBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Optional Disruption / Delay Control</h3>
+            <div class="section-note">Keep this empty for normal planning. Use only if future batches need to be delayed.</div>
+          </div>
+          <div class="btns">
+            <button class="btn btn-secondary" type="button" onclick="addRow('disruptionBody', disruptionRow())">+ Add Disruption</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Scope</th>
+                <th>Location</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Impact Type</th>
+                <th>Reason</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="disruptionBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h3 class="section-title">Export-Ready Preview</h3>
+            <div class="section-note">This preview shows the frontend is ready to push structured JSON into automation or Excel generation.</div>
+          </div>
+          <div class="btns">
+            <button class="btn btn-primary" type="button" onclick="buildPreview()">Generate Preview Payload</button>
+            <button class="btn btn-secondary" type="button" onclick="downloadJson()">Download JSON</button>
+            <button class="btn btn-primary" type="button" onclick="sendToWebhook()">Generate Excel via Webhook</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="footer-actions">
+            <div class="small muted">Tip: This frontend can later be connected to n8n to produce the final Excel batch planner automatically.</div>
+          </div>
+          <pre class="export-area" id="previewBox">Use the webhook-connected version to send payload to n8n and receive the Excel output directly.</pre>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <template id="siteTemplate">
+    <div class="site-block">
+      <div class="site-top">
+        <div class="site-title">Location Setup</div>
+        <button class="btn btn-secondary danger" type="button" onclick="this.closest('.site-block').remove(); refreshKPIs(); syncLocationOptions();">Remove</button>
+      </div>
+      <div class="grid-4">
+        <div class="field">
+          <label>Location Name</label>
+          <input type="text" class="site-name" placeholder="Example: Pune" oninput="syncLocationOptions()" />
+        </div>
+        <div class="field">
+          <label>Final Ramp Target</label>
+          <input type="number" class="ramp-target" placeholder="Example: 100" />
+        </div>
+        <div class="field">
+          <label>Trainers Available</label>
+          <input type="number" class="trainers" placeholder="Example: 5" />
+        </div>
+        <div class="field">
+          <label>Total Rooms</label>
+          <input type="number" class="room-count" placeholder="Example: 3" />
+        </div>
+      </div>
+
+      <div class="check-row">
+        <label class="check"><input type="checkbox" class="both-shifts" checked /> Use both shifts (7 AM–4 PM and 4 PM–1 AM)</label>
+        <label class="check"><input type="checkbox" class="sme-enabled" onchange="toggleSmeRatio(this)" /> Use SME support for OJT</label>
+      </div>
+
+      <div class="grid-4" style="margin-top:14px">
+        <div class="field">
+          <label>SME Ratio</label>
+          <select class="sme-ratio" disabled>
+            <option value="">Select ratio</option>
+            <option>5:1</option>
+            <option>10:1</option>
+          </select>
+          <div class="hint">Used only if SME support is enabled.</div>
+        </div>
+        <div class="field">
+          <label>Default Shift Mode</label>
+          <select class="shift-mode">
+            <option>Both Shifts</option>
+            <option>Morning Only</option>
+            <option>Evening Only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <input type="text" class="site-notes" placeholder="Any site-specific note" />
+        </div>
+        <div class="field">
+          <label>Recruitment-linked first onboarding date</label>
+          <input type="date" class="first-onboard" />
+          <div class="hint">Useful as visibility for when the first batch can realistically start.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="btns" style="margin-bottom:10px">
+          <div class="chip">Room Capacity Setup</div>
+          <button class="btn btn-secondary" type="button" onclick="addRoomRow(this)">+ Add Room</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Room Name</th>
+              <th>Capacity</th>
+              <th>Shift Usage</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody class="room-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const siteContainer = document.getElementById('siteContainer');
+    const previewBox = document.getElementById('previewBox');
+
+    function siteBlock() {
+      const tpl = document.getElementById('siteTemplate');
+      return tpl.content.cloneNode(true);
+    }
+
+    function roomRow() {
+      return `
+        <tr>
+          <td><input type="text" placeholder="Example: Room 1"></td>
+          <td><input type="number" placeholder="15 / 20 / 25"></td>
+          <td>
+            <select>
+              <option>Both Shifts</option>
+              <option>Morning Only</option>
+              <option>Evening Only</option>
+            </select>
+          </td>
+          <td><button class="btn btn-secondary danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+        </tr>`;
+    }
+
+    function recruitmentRow() {
+      return `
+        <tr>
+          <td>${locationSelect()}</td>
+          <td><input type="date"></td>
+          <td><input type="number" placeholder="Example: 20"></td>
+          <td><input type="text" placeholder="Optional note"></td>
+          <td><button class="btn btn-secondary danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+        </tr>`;
+    }
+
+    function holidayRow() {
+      return `
+        <tr>
+          <td>${locationSelect()}</td>
+          <td><input type="date"></td>
+          <td><input type="text" placeholder="Example: Maharashtra Day"></td>
+          <td><button class="btn btn-secondary danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+        </tr>`;
+    }
+
+    function disruptionRow() {
+      return `
+        <tr>
+          <td>
+            <select>
+              <option>Site-wide</option>
+              <option>Batch-specific</option>
+            </select>
+          </td>
+          <td>${locationSelect()}</td>
+          <td><input type="date"></td>
+          <td><input type="date"></td>
+          <td>
+            <select>
+              <option>No onboarding</option>
+              <option>Delay future batches</option>
+              <option>Site planning pause</option>
+            </select>
+          </td>
+          <td><input type="text" placeholder="Example: heavy rainfall"></td>
+          <td><button class="btn btn-secondary danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+        </tr>`;
+    }
+
+    function locationSelect(){
+      const options = getLocations().map(x => `<option>${x}</option>`).join('');
+      return `<select class="location-select"><option value="">Select</option>${options}</select>`;
+    }
+
+    function getLocations(){
+      return [...document.querySelectorAll('.site-name')]
+        .map(x => x.value.trim())
+        .filter(Boolean);
+    }
+
+    function syncLocationOptions(){
+      const options = `<option value="">Select</option>` + getLocations().map(x => `<option>${x}</option>`).join('');
+      document.querySelectorAll('.location-select').forEach(sel => {
+        const current = sel.value;
+        sel.innerHTML = options;
+        if ([...sel.options].some(o => o.value === current)) sel.value = current;
+      });
+      refreshKPIs();
+    }
+
+    function addSite() {
+      siteContainer.appendChild(siteBlock());
+      const newBlock = siteContainer.lastElementChild;
+      newBlock.querySelector('.room-body').insertAdjacentHTML('beforeend', roomRow());
+      refreshKPIs();
+      syncLocationOptions();
+    }
+
+    function addRoomRow(btn){
+      btn.closest('.site-block').querySelector('.room-body').insertAdjacentHTML('beforeend', roomRow());
+      refreshKPIs();
+    }
+
+    function addRow(bodyId, rowHtml){
+      document.getElementById(bodyId).insertAdjacentHTML('beforeend', rowHtml);
+      refreshKPIs();
+      syncLocationOptions();
+    }
+
+    function toggleSmeRatio(cb){
+      const sel = cb.closest('.site-block').querySelector('.sme-ratio');
+      sel.disabled = !cb.checked;
+      if (!cb.checked) sel.value = '';
+    }
+
+    function refreshKPIs(){
+      document.getElementById('kpiSites').textContent = document.querySelectorAll('.site-block').length;
+      document.getElementById('kpiRooms').textContent = document.querySelectorAll('.room-body tr').length;
+      document.getElementById('kpiIntakes').textContent = document.querySelectorAll('#recruitmentBody tr').length;
+      document.getElementById('kpiHolidays').textContent = document.querySelectorAll('#holidayBody tr').length;
+    }
+
+    function buildPreview(){
+      const globalFields = document.querySelectorAll('.section:first-of-type input, .section:first-of-type select');
+      const global = {
+        process_name: globalFields[0].value,
+        planning_month: globalFields[1].value,
+        throughput_percent: globalFields[2].value,
+        working_model: globalFields[3].value,
+        classroom_days: globalFields[4].value,
+        mock_days: globalFields[5].value,
+        ojt_days: globalFields[6].value,
+        result_days: globalFields[7].value
+      };
+
+      const sites = [...document.querySelectorAll('.site-block')].map(block => ({
+        location: block.querySelector('.site-name').value,
+        ramp_target: block.querySelector('.ramp-target').value,
+        trainers_available: block.querySelector('.trainers').value,
+        rooms_declared: block.querySelector('.room-count').value,
+        use_both_shifts: block.querySelector('.both-shifts').checked,
+        sme_enabled: block.querySelector('.sme-enabled').checked,
+        sme_ratio: block.querySelector('.sme-ratio').value,
+        default_shift_mode: block.querySelector('.shift-mode').value,
+        first_onboarding_date: block.querySelector('.first-onboard').value,
+        notes: block.querySelector('.site-notes').value,
+        rooms: [...block.querySelectorAll('.room-body tr')].map(tr => ({
+          room_name: tr.children[0].querySelector('input').value,
+          capacity: tr.children[1].querySelector('input').value,
+          shift_usage: tr.children[2].querySelector('select').value
+        }))
+      }));
+
+      const recruitment = [...document.querySelectorAll('#recruitmentBody tr')].map(tr => ({
+        location: tr.children[0].querySelector('select').value,
+        onboarding_date: tr.children[1].querySelector('input').value,
+        agents_available: tr.children[2].querySelector('input').value,
+        notes: tr.children[3].querySelector('input').value
+      }));
+
+      const holidays = [...document.querySelectorAll('#holidayBody tr')].map(tr => ({
+        location: tr.children[0].querySelector('select').value,
+        holiday_date: tr.children[1].querySelector('input').value,
+        holiday_name: tr.children[2].querySelector('input').value
+      }));
+
+      const disruptions = [...document.querySelectorAll('#disruptionBody tr')].map(tr => ({
+        scope: tr.children[0].querySelector('select').value,
+        location: tr.children[1].querySelector('select').value,
+        from_date: tr.children[2].querySelector('input').value,
+        to_date: tr.children[3].querySelector('input').value,
+        impact_type: tr.children[4].querySelector('select').value,
+        reason: tr.children[5].querySelector('input').value
+      }));
+
+      const payload = { global, sites, recruitment, holidays, disruptions };
+      previewBox.textContent = JSON.stringify(payload, null, 2);
+      window.__plannerPayload = payload;
+    }
+
+    function downloadJson(){
+      if (!window.__plannerPayload) buildPreview();
+      const blob = new Blob([JSON.stringify(window.__plannerPayload, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'training_ramp_batch_planner_input.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    
+    async function sendToWebhook(){
+      if (!window.__plannerPayload) buildPreview();
+      const webhookUrl = prompt('Paste your n8n production webhook URL here');
+      if (!webhookUrl) return;
+
+      try {
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(window.__plannerPayload)
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Webhook failed: ${res.status} ${txt}`);
+        }
+
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Training_Ramp_Batch_Planner_Output.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      } catch (e) {
+        alert(e.message || 'Something went wrong while calling the webhook.');
+      }
+    }
+
+    // Seed defaults
+    addSite();
+    addSite();
+    const blocks = document.querySelectorAll('.site-block');
+    if (blocks[0]) {
+      blocks[0].querySelector('.site-name').value = 'Pune';
+      blocks[0].querySelector('.ramp-target').value = 100;
+      blocks[0].querySelector('.trainers').value = 4;
+      blocks[0].querySelector('.room-count').value = 2;
+      blocks[0].querySelector('.first-onboard').value = '2026-04-22';
+      const rows = blocks[0].querySelectorAll('.room-body tr');
+      rows[0].children[0].querySelector('input').value = 'Pune Room 1';
+      rows[0].children[1].querySelector('input').value = 20;
+    }
+    if (blocks[1]) {
+      blocks[1].querySelector('.site-name').value = 'Bangalore';
+      blocks[1].querySelector('.ramp-target').value = 140;
+      blocks[1].querySelector('.trainers').value = 5;
+      blocks[1].querySelector('.room-count').value = 3;
+      blocks[1].querySelector('.first-onboard').value = '2026-04-22';
+      const rows = blocks[1].querySelectorAll('.room-body tr');
+      rows[0].children[0].querySelector('input').value = 'BLR Room 1';
+      rows[0].children[1].querySelector('input').value = 20;
+    }
+    syncLocationOptions();
+    addRow('recruitmentBody', recruitmentRow());
+    addRow('recruitmentBody', recruitmentRow());
+    document.querySelectorAll('#recruitmentBody tr')[0].children[0].querySelector('select').value = 'Pune';
+    document.querySelectorAll('#recruitmentBody tr')[0].children[1].querySelector('input').value = '2026-04-22';
+    document.querySelectorAll('#recruitmentBody tr')[0].children[2].querySelector('input').value = '20';
+    document.querySelectorAll('#recruitmentBody tr')[1].children[0].querySelector('select').value = 'Bangalore';
+    document.querySelectorAll('#recruitmentBody tr')[1].children[1].querySelector('input').value = '2026-04-22';
+    document.querySelectorAll('#recruitmentBody tr')[1].children[2].querySelector('input').value = '20';
+    refreshKPIs();
+    buildPreview();
+  </script>
+</body>
+</html>
