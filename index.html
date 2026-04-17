@@ -1,57 +1,580 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Training Ramp Planner</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Training Ramp Planner | Executive Edition</title>
 <style>
-body{font-family:Arial;background:#f4f6fb;margin:0;padding:0}
-.container{max-width:900px;margin:40px auto;background:#fff;padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
-h1{margin-bottom:10px}
-button{padding:12px 18px;border:none;border-radius:8px;background:#1d4ed8;color:#fff;font-weight:bold;cursor:pointer}
-.run-status{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:#eef2ff;margin-top:20px;display:none}
-.run-dot{width:10px;height:10px;border-radius:50%;background:#1d4ed8;margin-right:10px}
-.run-left{display:flex;align-items:center}
-.run-timer{font-weight:bold}
+:root{
+  --navy:#0d1728; --navy2:#14233d; --panel:#ffffff; --soft:#f6f8fc; --line:#e5ebf4;
+  --text:#14213d; --muted:#66758f; --accent:#1d4ed8; --accent2:#4338ca; --danger:#b91c1c;
+  --shadow:0 24px 70px rgba(8,18,38,.16); --radius:24px; --radius-sm:16px;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--text);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(67,56,202,.18), transparent 22%),
+    radial-gradient(circle at 100% 0%, rgba(29,78,216,.12), transparent 20%),
+    linear-gradient(145deg,var(--navy),var(--navy2));
+}
+.shell{max-width:1480px;margin:0 auto;padding:22px 18px 40px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;color:#fff;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{
+  width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:20px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 20px 44px rgba(29,78,216,.26)
+}
+.brand h1{margin:0;font-size:21px;letter-spacing:-.3px}
+.brand p{margin:4px 0 0;color:#cad7ee;font-size:13px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{
+  padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);color:#eef2ff;font-size:12px;font-weight:800
+}
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
+.hero-copy{color:#fff;padding:12px 6px 0 4px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#dbeafe;font-size:12px;font-weight:800;margin-bottom:14px
+}
+.hero-copy h2{margin:0 0 10px;font-size:48px;line-height:1.02;letter-spacing:-1.6px;max-width:860px}
+.hero-copy p{margin:0 0 18px;max-width:760px;color:#d3def1;font-size:17px;line-height:1.68}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{
+  padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);color:#f8fafc;font-size:12px;font-weight:800
+}
+.panel{
+  background:rgba(255,255,255,.98);border:1px solid rgba(255,255,255,.72);
+  border-radius:var(--radius);box-shadow:var(--shadow)
+}
+.summary{padding:22px;display:grid;gap:14px}
+.summary h3{margin:0;font-size:24px}
+.summary .sub{font-size:13px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.metric{padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:var(--soft)}
+.metric .label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:6px}
+.metric .value{font-size:26px;font-weight:900}
+.metric .meta{font-size:12px;color:var(--muted);margin-top:5px}
+.workspace{display:grid;grid-template-columns:310px 1fr;gap:18px}
+.sidebar{position:sticky;top:16px;padding:18px}
+.sidebar h3{margin:0 0 8px;font-size:18px}
+.sidebar p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.6}
+.nav{display:grid;gap:10px;margin-bottom:16px}
+.nav a{
+  text-decoration:none;color:var(--text);border:1px solid var(--line);background:var(--soft);border-radius:14px;
+  padding:12px 14px;font-size:13px;font-weight:900;display:flex;justify-content:space-between;gap:10px
+}
+.nav a span{color:var(--muted);font-size:12px;font-weight:700}
+.sidebox{border:1px solid var(--line);background:linear-gradient(180deg,#fff,#f8fbff);border-radius:18px;padding:14px}
+.sidebox h4{margin:0 0 8px;font-size:15px}
+.sidebox ul{margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.7}
+.content{display:grid;gap:18px}
+.section{overflow:hidden}
+.section-head{
+  padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#fbfcff);
+  display:flex;justify-content:space-between;align-items:center;gap:12px
+}
+.title h3{margin:0;font-size:22px;letter-spacing:-.3px}
+.title p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.section-body{padding:20px 22px}
+.banner{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:14px 16px;border-radius:18px;
+  border:1px solid #dbeafe;background:linear-gradient(180deg,#eff6ff,#eef2ff);color:#1d4ed8;font-size:13px;font-weight:800
+}
+.head-actions{display:flex;gap:10px;flex-wrap:wrap}
+.grid-4,.grid-3,.grid-2{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(4,1fr)} .grid-3{grid-template-columns:repeat(3,1fr)} .grid-2{grid-template-columns:repeat(2,1fr)}
+.field{display:grid;gap:8px}
+label{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:900;color:#334155}
+.hint{font-size:12px;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select{
+  width:100%;min-height:46px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:#fff;
+  font-size:15px;color:var(--text);outline:none;transition:.18s ease
+}
+input:focus,select:focus{border-color:#9bbcfb;box-shadow:0 0 0 4px rgba(29,78,216,.1)}
+.check-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.check{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+  background:var(--soft);font-size:13px;font-weight:900
+}
+.check input{width:18px;height:18px}
+table{
+  width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#fff
+}
+thead th{
+  text-align:left;padding:14px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.4px;
+  background:#f7f9fe;border-bottom:1px solid var(--line)
+}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+td input,td select{min-height:40px;border-radius:12px}
+.site-block{
+  border:1px solid var(--line);background:linear-gradient(180deg,#fff,#fcfdff);border-radius:22px;padding:18px;margin-bottom:16px
+}
+.site-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.site-head h4{margin:0;font-size:18px} .site-head p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.btn{
+  border:0;cursor:pointer;min-height:44px;padding:0 16px;border-radius:14px;font-size:13px;font-weight:900;transition:.18s ease
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 16px 36px rgba(29,78,216,.22)}
+.btn-secondary{background:#fff;color:#334155;border:1px solid var(--line)}
+.btn-soft{background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe}
+.btn-danger{background:#fff1f2;color:var(--danger);border:1px solid #fecaca}
+.preview{background:#0f172a;color:#e2e8f0;border-radius:18px;padding:16px 18px;min-height:180px;font-size:12px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.sticky{position:sticky;bottom:14px;z-index:20;margin-top:12px}
+.sticky-inner{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-radius:20px;padding:14px 16px;
+  background:rgba(9,18,35,.92);color:#fff;box-shadow:0 20px 50px rgba(2,6,23,.28);backdrop-filter:blur(14px)
+}
+.sticky strong{display:block;font-size:14px;margin-bottom:3px} .sticky span{font-size:12px;color:#c7d2fe}
+.sticky-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.run-status{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:16px 18px;border:1px solid var(--line);border-radius:18px;
+  background:linear-gradient(180deg,#ffffff,#f8fbff);margin-bottom:16px
+}
+.run-status-left{display:flex;align-items:center;gap:12px}
+.run-dot{
+  width:14px;height:14px;border-radius:999px;background:var(--accent);
+  box-shadow:0 0 0 0 rgba(29,78,216,.35);animation:pulse 1.6s infinite
+}
+.run-title{font-size:14px;font-weight:900;color:var(--text)}
+.run-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.run-timer{
+  min-width:84px;text-align:center;padding:10px 12px;border-radius:14px;
+  background:#eef2ff;color:#1e3a8a;font-weight:900;font-variant-numeric:tabular-nums
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(29,78,216,.35)}
+  70%{box-shadow:0 0 0 10px rgba(29,78,216,0)}
+  100%{box-shadow:0 0 0 0 rgba(29,78,216,0)}
+}
+
+@media (max-width:1180px){.hero{grid-template-columns:1fr}.workspace{grid-template-columns:1fr}.sidebar{position:static}.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:720px){.hero-copy h2{font-size:34px}.grid-4,.grid-3,.grid-2,.metrics{grid-template-columns:1fr}table{display:block;overflow-x:auto}}
 </style>
 </head>
 <body>
+<div class="shell">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">TR</div>
+      <div>
+        <h1>Training Ramp Planner</h1>
+        <p>Executive planning interface for BPO training operations</p>
+      </div>
+    </div>
+    <div class="pills">
+      <div class="pill">Operations Excellence</div>
+      <div class="pill">Ramp Governance</div>
+      <div class="pill">Boardroom Demo</div>
+    </div>
+  </div>
 
-<div class="container">
-<h1>Training Ramp Planner</h1>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Strategy-led planning tool</div>
+      <h2>Translate capacity, onboarding dates, and OJT support into a clean batch waterfall.</h2>
+      <p>
+        A premium front-end for training leaders managing multi-location ramp-up. Built to feel like a serious operating tool for business planning, not a technical utility.
+      </p>
+      <div class="chips">
+        <div class="chip">Multi-site setup</div>
+        <div class="chip">Trainer release logic</div>
+        <div class="chip">Room capacity logic</div>
+        <div class="chip">Holiday-aware planning</div>
+        <div class="chip">Executive-ready experience</div>
+      </div>
+    </div>
+    <div class="panel summary">
+      <div>
+        <h3>Planning Snapshot</h3>
+        <div class="sub">Live counters built for walkthrough conversations with operations leadership.</div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="label">Locations</div><div class="value" id="kpiSites">0</div><div class="meta">Configured site blocks</div></div>
+        <div class="metric"><div class="label">Rooms</div><div class="value" id="kpiRooms">0</div><div class="meta">Training room footprint</div></div>
+        <div class="metric"><div class="label">Onboarding Entries</div><div class="value" id="kpiIntakes">0</div><div class="meta">Recruitment-linked starts</div></div>
+        <div class="metric"><div class="label">Holiday Entries</div><div class="value" id="kpiHolidays">0</div><div class="meta">Location exclusions</div></div>
+      </div>
+    </div>
+  </section>
 
-<button onclick="sendToWebhook()">Generate Execution Plan</button>
+  <div class="workspace">
+    <aside class="sidebar panel">
+      <h3>Executive Navigation</h3>
+      <p>Use this panel to move quickly across the setup during the demo.</p>
+      <div class="nav">
+        <a href="#globalRules">Global Rules <span>Model setup</span></a>
+        <a href="#siteSetup">Site Setup <span>Capacity inputs</span></a>
+        <a href="#recruitmentPlan">Recruitment Plan <span>First batch dates</span></a>
+        <a href="#holidayCalendar">Holiday Calendar <span>Working-day logic</span></a>
+        <a href="#disruptionControl">Disruption Control <span>Future-ready layer</span></a>
+        <a href="#previewSection">Run Planner <span>One-click execution</span></a>
+      </div>
+      <div class="sidebox">
+        <h4>Demo cue points</h4>
+        <ul>
+          <li>Recruitment confirms only the first start date.</li>
+          <li>After that, the training engine drives the waterfall.</li>
+          <li>SME mode releases trainers after mock certification.</li>
+          <li>Room capacity and shifts define real delivery limits.</li>
+        </ul>
+      </div>
+    </aside>
 
-<div id="runStatusCard" class="run-status">
-<div class="run-left">
-<div class="run-dot" id="runDot"></div>
-<div>
-<div id="runTitle">Preparing...</div>
-<div id="runSub" style="font-size:12px;color:#555">Please wait...</div>
-</div>
-</div>
-<div id="runTimer" class="run-timer">00:00</div>
+    <main class="content">
+      <section class="section panel" id="globalRules">
+        <div class="section-head">
+          <div class="title">
+            <h3>Global Planning Rules</h3>
+            <p>Define the common operating model used across all locations and batches.</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="banner">This planner assumes recruitment confirms the first onboarding date. From there, training capacity drives the rest of the planning logic.</div>
+          <div class="grid-4">
+            <div class="field"><label>Process / Client Name</label><input type="text" placeholder="Example: Myntra" id="processName"/></div>
+            <div class="field"><label>Planning Month</label><input type="text" placeholder="Example: June 2026" id="planningMonth"/></div>
+            <div class="field"><label>Throughput %</label><input type="number" value="85" min="1" max="100" id="throughputPct"/></div>
+            <div class="field"><label>Working Model</label><select id="workingModel"><option selected>6 Days (Mon–Sat)</option><option>5 Days (Mon–Fri)</option></select></div>
+          </div>
+          <div class="grid-4" style="margin-top:16px">
+            <div class="field"><label>Classroom Training Days</label><input type="number" value="15" id="classroomDays"/></div>
+            <div class="field"><label>Mock Certification Days</label><input type="number" value="1" id="mockDays"/></div>
+            <div class="field"><label>OJT Days</label><input type="number" value="10" id="ojtDays"/></div>
+            <div class="field"><label>Result Publication Days</label><input type="number" value="1" id="resultDays"/></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel" id="siteSetup">
+        <div class="section-head">
+          <div class="title">
+            <h3>Site Setup</h3>
+            <p>Configure ramp target, room capacity, trainer availability, shifts, and SME support by location.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-secondary" type="button" onclick="addSite()">+ Add Location</button>
+          </div>
+        </div>
+        <div class="section-body" id="siteContainer"></div>
+      </section>
+
+      <section class="section panel" id="recruitmentPlan">
+        <div class="section-head">
+          <div class="title">
+            <h3>Recruitment Intake Plan</h3>
+            <p>These entries define the first confirmed batch onboarding date for each location.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-secondary" type="button" onclick="addRow('recruitmentBody', recruitmentRow())">+ Add Intake Date</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead><tr><th>Location</th><th>Onboarding Date</th><th>Agents Available</th><th>Notes</th><th></th></tr></thead>
+            <tbody id="recruitmentBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section panel" id="holidayCalendar">
+        <div class="section-head">
+          <div class="title">
+            <h3>Holiday Calendar</h3>
+            <p>Exclude non-working days from timeline and go-live logic.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-secondary" type="button" onclick="addRow('holidayBody', holidayRow())">+ Add Holiday</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead><tr><th>Location</th><th>Holiday Date</th><th>Holiday Name</th><th></th></tr></thead>
+            <tbody id="holidayBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section panel" id="disruptionControl">
+        <div class="section-head">
+          <div class="title">
+            <h3>Optional Disruption Control</h3>
+            <p>Keep hidden or lightly mention this as a future-ready planning layer.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-secondary" type="button" onclick="addRow('disruptionBody', disruptionRow())">+ Add Disruption</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <table>
+            <thead><tr><th>Scope</th><th>Location</th><th>From</th><th>To</th><th>Impact Type</th><th>Reason</th><th></th></tr></thead>
+            <tbody id="disruptionBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section panel" id="previewSection">
+        <div class="section-head">
+          <div class="title">
+            <h3>Generate Execution Plan</h3>
+            <p>Payload is intentionally kept secondary so the experience feels executive-facing, not technical.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-primary" type="button" onclick="sendToWebhook()">Generate Execution Plan</button>
+            <button class="btn btn-secondary" type="button" onclick="togglePreview()">Show / Hide Payload</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div id="runStatusCard" class="run-status" style="display:none;">
+            <div class="run-status-left">
+              <div class="run-dot" id="runDot"></div>
+              <div>
+                <div class="run-title" id="runTitle">Preparing planner...</div>
+                <div class="run-sub" id="runSub">Please wait while the execution plan is being generated.</div>
+              </div>
+            </div>
+            <div class="run-timer" id="runTimer">00:00</div>
+          </div>
+          <div class="preview" id="previewBox" style="display:none;"></div>
+        </div>
+      </section>
+
+      <div class="sticky">
+        <div class="sticky-inner">
+          <div>
+            <strong>Executive demo mode</strong>
+            <span>Sharp, quiet, strategy-style interface for operations transformation conversations.</span>
+          </div>
+          <div class="sticky-actions">
+            <button class="btn btn-secondary" type="button" onclick="togglePreview()">Payload</button>
+            <button class="btn btn-primary" type="button" onclick="sendToWebhook()">Generate Execution Plan</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 </div>
 
-</div>
+<template id="siteTemplate">
+  <div class="site-block">
+    <div class="site-head">
+      <div>
+        <h4>Location Setup</h4>
+        <p>Define ramp, trainer capacity, room setup, shift logic, and OJT support model.</p>
+      </div>
+      <button class="btn btn-danger" type="button" onclick="this.closest('.site-block').remove(); refreshKPIs(); syncLocationOptions();">Remove</button>
+    </div>
+    <div class="grid-4">
+      <div class="field"><label>Location Name</label><input type="text" class="site-name" placeholder="Example: Pune" oninput="syncLocationOptions()" /></div>
+      <div class="field"><label>Final Ramp Target</label><input type="number" class="ramp-target" placeholder="Example: 100" /></div>
+      <div class="field"><label>Trainers Available</label><input type="number" class="trainers" placeholder="Example: 5" /></div>
+      <div class="field"><label>Total Rooms</label><input type="number" class="room-count" placeholder="Example: 3" /></div>
+    </div>
+
+    <div class="check-row">
+      <label class="check"><input type="checkbox" class="both-shifts" checked /> Use both shifts (7 AM–4 PM and 4 PM–1 AM)</label>
+      <label class="check"><input type="checkbox" class="sme-enabled" onchange="toggleSmeRatio(this)" /> Use SME support for OJT</label>
+    </div>
+
+    <div class="grid-4" style="margin-top:16px">
+      <div class="field"><label>SME Ratio</label><select class="sme-ratio" disabled><option value="">Select ratio</option><option>5:1</option><option>10:1</option></select></div>
+      <div class="field"><label>Default Shift Mode</label><select class="shift-mode"><option>Both Shifts</option><option>Morning Only</option><option>Evening Only</option></select></div>
+      <div class="field"><label>Notes</label><input type="text" class="site-notes" placeholder="Optional site note" /></div>
+      <div class="field"><label>Recruitment-linked first onboarding date</label><input type="date" class="first-onboard" /></div>
+    </div>
+
+    <div style="margin-top:18px">
+      <div class="head-actions" style="margin-bottom:10px">
+        <button class="btn btn-soft" type="button">Room Capacity Setup</button>
+        <button class="btn btn-secondary" type="button" onclick="addRoomRow(this)">+ Add Room</button>
+      </div>
+      <table>
+        <thead><tr><th>Room Name</th><th>Capacity</th><th>Shift Usage</th><th></th></tr></thead>
+        <tbody class="room-body"></tbody>
+      </table>
+    </div>
+  </div>
+</template>
 
 <script>
+const siteContainer = document.getElementById('siteContainer');
+const previewBox = document.getElementById('previewBox');
 
-window.__plannerPayload = {
-  demo: "sample payload"
-};
-
+function siteBlock() {
+  const tpl = document.getElementById('siteTemplate');
+  return tpl.content.cloneNode(true);
+}
+function roomRow() {
+  return `
+    <tr>
+      <td><input type="text" placeholder="Example: Room 1"></td>
+      <td><input type="number" placeholder="15 / 20 / 25"></td>
+      <td>
+        <select>
+          <option>Both Shifts</option>
+          <option>Morning Only</option>
+          <option>Evening Only</option>
+        </select>
+      </td>
+      <td><button class="btn btn-danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+    </tr>`;
+}
+function recruitmentRow() {
+  return `
+    <tr>
+      <td>${locationSelect()}</td>
+      <td><input type="date"></td>
+      <td><input type="number" placeholder="Example: 20"></td>
+      <td><input type="text" placeholder="Optional note"></td>
+      <td><button class="btn btn-danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+    </tr>`;
+}
+function holidayRow() {
+  return `
+    <tr>
+      <td>${locationSelect()}</td>
+      <td><input type="date"></td>
+      <td><input type="text" placeholder="Example: Maharashtra Day"></td>
+      <td><button class="btn btn-danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+    </tr>`;
+}
+function disruptionRow() {
+  return `
+    <tr>
+      <td>
+        <select>
+          <option>Site-wide</option>
+          <option>Batch-specific</option>
+        </select>
+      </td>
+      <td>${locationSelect()}</td>
+      <td><input type="date"></td>
+      <td><input type="date"></td>
+      <td>
+        <select>
+          <option>No onboarding</option>
+          <option>Delay future batches</option>
+          <option>Site planning pause</option>
+        </select>
+      </td>
+      <td><input type="text" placeholder="Example: heavy rainfall"></td>
+      <td><button class="btn btn-danger" type="button" onclick="this.closest('tr').remove(); refreshKPIs();">Remove</button></td>
+    </tr>`;
+}
+function locationSelect(){
+  const options = getLocations().map(x => `<option>${x}</option>`).join('');
+  return `<select class="location-select"><option value="">Select</option>${options}</select>`;
+}
+function getLocations(){
+  return [...document.querySelectorAll('.site-name')].map(x => x.value.trim()).filter(Boolean);
+}
+function syncLocationOptions(){
+  const options = `<option value="">Select</option>` + getLocations().map(x => `<option>${x}</option>`).join('');
+  document.querySelectorAll('.location-select').forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = options;
+    if ([...sel.options].some(o => o.value === current)) sel.value = current;
+  });
+  refreshKPIs();
+}
+function addSite() {
+  siteContainer.appendChild(siteBlock());
+  const newBlock = siteContainer.lastElementChild;
+  newBlock.querySelector('.room-body').insertAdjacentHTML('beforeend', roomRow());
+  refreshKPIs();
+  syncLocationOptions();
+}
+function addRoomRow(btn){
+  btn.closest('.site-block').querySelector('.room-body').insertAdjacentHTML('beforeend', roomRow());
+  refreshKPIs();
+}
+function addRow(bodyId, rowHtml){
+  document.getElementById(bodyId).insertAdjacentHTML('beforeend', rowHtml);
+  refreshKPIs();
+  syncLocationOptions();
+}
+function toggleSmeRatio(cb){
+  const sel = cb.closest('.site-block').querySelector('.sme-ratio');
+  sel.disabled = !cb.checked;
+  if (!cb.checked) sel.value = '';
+}
+function refreshKPIs(){
+  document.getElementById('kpiSites').textContent = document.querySelectorAll('.site-block').length;
+  document.getElementById('kpiRooms').textContent = document.querySelectorAll('.room-body tr').length;
+  document.getElementById('kpiIntakes').textContent = document.querySelectorAll('#recruitmentBody tr').length;
+  document.getElementById('kpiHolidays').textContent = document.querySelectorAll('#holidayBody tr').length;
+}
+function buildPreview(){
+  const payload = {
+    global: {
+      process_name: document.getElementById('processName').value,
+      planning_month: document.getElementById('planningMonth').value,
+      throughput_percent: document.getElementById('throughputPct').value,
+      working_model: document.getElementById('workingModel').value,
+      classroom_days: document.getElementById('classroomDays').value,
+      mock_days: document.getElementById('mockDays').value,
+      ojt_days: document.getElementById('ojtDays').value,
+      result_days: document.getElementById('resultDays').value
+    },
+    sites: [...document.querySelectorAll('.site-block')].map(block => ({
+      location: block.querySelector('.site-name').value,
+      ramp_target: block.querySelector('.ramp-target').value,
+      trainers_available: block.querySelector('.trainers').value,
+      rooms_declared: block.querySelector('.room-count').value,
+      use_both_shifts: block.querySelector('.both-shifts').checked,
+      sme_enabled: block.querySelector('.sme-enabled').checked,
+      sme_ratio: block.querySelector('.sme-ratio').value,
+      default_shift_mode: block.querySelector('.shift-mode').value,
+      first_onboarding_date: block.querySelector('.first-onboard').value,
+      notes: block.querySelector('.site-notes').value,
+      rooms: [...block.querySelectorAll('.room-body tr')].map(tr => ({
+        room_name: tr.children[0].querySelector('input').value,
+        capacity: tr.children[1].querySelector('input').value,
+        shift_usage: tr.children[2].querySelector('select').value
+      }))
+    })),
+    recruitment: [...document.querySelectorAll('#recruitmentBody tr')].map(tr => ({
+      location: tr.children[0].querySelector('select').value,
+      onboarding_date: tr.children[1].querySelector('input').value,
+      agents_available: tr.children[2].querySelector('input').value,
+      notes: tr.children[3].querySelector('input').value
+    })),
+    holidays: [...document.querySelectorAll('#holidayBody tr')].map(tr => ({
+      location: tr.children[0].querySelector('select').value,
+      holiday_date: tr.children[1].querySelector('input').value,
+      holiday_name: tr.children[2].querySelector('input').value
+    })),
+    disruptions: [...document.querySelectorAll('#disruptionBody tr')].map(tr => ({
+      scope: tr.children[0].querySelector('select').value,
+      location: tr.children[1].querySelector('select').value,
+      from_date: tr.children[2].querySelector('input').value,
+      to_date: tr.children[3].querySelector('input').value,
+      impact_type: tr.children[4].querySelector('select').value,
+      reason: tr.children[5].querySelector('input').value
+    }))
+  };
+  window.__plannerPayload = payload;
+  previewBox.textContent = JSON.stringify(payload, null, 2);
+}
+function togglePreview(){
+  if (!window.__plannerPayload) buildPreview();
+  previewBox.style.display = previewBox.style.display === 'none' ? 'block' : 'none';
+}
 async function sendToWebhook(){
-  const webhookUrl = "https://n8n-hnvg.onrender.com/webhook/training-ramp-batch-planner";
+  if (!window.__plannerPayload) buildPreview();
 
+  const webhookUrl = "https://n8n-hnvg.onrender.com/webhook/training-ramp-batch-planner";
   const statusCard = document.getElementById('runStatusCard');
   const runTitle = document.getElementById('runTitle');
   const runSub = document.getElementById('runSub');
   const runTimer = document.getElementById('runTimer');
   const runDot = document.getElementById('runDot');
-
-  let openBtn = document.getElementById('openPlanBtn');
-  if (openBtn) openBtn.remove();
 
   let seconds = 0;
   let timerHandle = null;
@@ -69,20 +592,27 @@ async function sendToWebhook(){
 
     if (tone === 'success') {
       runDot.style.background = '#15803d';
+      runTimer.style.background = '#ecfdf3';
+      runTimer.style.color = '#166534';
     } else if (tone === 'error') {
       runDot.style.background = '#dc2626';
+      runTimer.style.background = '#fef2f2';
+      runTimer.style.color = '#991b1b';
     } else {
-      runDot.style.background = '#1d4ed8';
+      runDot.style.background = 'var(--accent)';
+      runTimer.style.background = '#eef2ff';
+      runTimer.style.color = '#1e3a8a';
     }
   }
 
   try {
-    showStatus('Building execution plan...', 'Processing...', 'working');
-
+    showStatus('Building execution plan...', 'The system is validating inputs, applying planning logic, and preparing the output.', 'working');
+    seconds = 0;
     runTimer.textContent = '00:00';
+    document.body.style.cursor = 'wait';
 
     timerHandle = setInterval(() => {
-      seconds++;
+      seconds += 1;
       runTimer.textContent = formatTime(seconds);
     }, 1000);
 
@@ -92,38 +622,86 @@ async function sendToWebhook(){
       body: JSON.stringify(window.__plannerPayload)
     });
 
-    const raw = await res.text();
-
     if (!res.ok) {
-      throw new Error(raw);
+      const txt = await res.text();
+      throw new Error(`Workflow error: ${res.status} ${txt}`);
     }
 
-    let data = raw ? JSON.parse(raw) : null;
+    const data = await res.json();
 
-    if (!data || !data.spreadsheetUrl) {
-      throw new Error("No spreadsheet URL returned");
+    if (!data.spreadsheetUrl) {
+      throw new Error('Planner link was not returned by the workflow.');
     }
 
     clearInterval(timerHandle);
-
-    showStatus('Plan ready', 'Click below to open', 'success');
-
-    const btn = document.createElement('button');
-    btn.id = 'openPlanBtn';
-    btn.innerText = 'Open Execution Plan';
-    btn.style.marginTop = '10px';
-    btn.onclick = () => window.open(data.spreadsheetUrl, '_blank');
-
-    statusCard.appendChild(btn);
-
+    showStatus('Execution plan generated successfully', 'Opening the planner in a new tab for review and download.', 'success');
+    window.open(data.spreadsheetUrl, '_blank');
   } catch (e) {
     if (timerHandle) clearInterval(timerHandle);
-    showStatus('Error', e.message, 'error');
-    alert(e.message);
+    showStatus('Planner generation failed', e.message || 'Something went wrong while generating the planner.', 'error');
+    console.error(e);
+    alert(e.message || 'Something went wrong while generating the planner.');
+  } finally {
+    document.body.style.cursor = 'default';
   }
 }
-
+addSite(); addSite();
+const blocks = document.querySelectorAll('.site-block');
+if (blocks[0]) {
+  blocks[0].querySelector('.site-name').value = 'Pune';
+  blocks[0].querySelector('.ramp-target').value = 100;
+  blocks[0].querySelector('.trainers').value = 2;
+  blocks[0].querySelector('.room-count').value = 2;
+  blocks[0].querySelector('.first-onboard').value = '2026-04-22';
+  blocks[0].querySelector('.both-shifts').checked = false;
+  blocks[0].querySelector('.shift-mode').value = 'Morning Only';
+  blocks[0].querySelector('.sme-enabled').checked = true;
+  toggleSmeRatio(blocks[0].querySelector('.sme-enabled'));
+  blocks[0].querySelector('.sme-ratio').value = '10:1';
+  const rowA = blocks[0].querySelectorAll('.room-body tr');
+  rowA[0].children[0].querySelector('input').value = 'Pune Room 1';
+  rowA[0].children[1].querySelector('input').value = 20;
+  rowA[0].children[2].querySelector('select').value = 'Morning Only';
+  addRoomRow(blocks[0].querySelector('.head-actions .btn.btn-secondary'));
+  const rowB = blocks[0].querySelectorAll('.room-body tr');
+  rowB[1].children[0].querySelector('input').value = 'Pune Room 2';
+  rowB[1].children[1].querySelector('input').value = 22;
+  rowB[1].children[2].querySelector('select').value = 'Morning Only';
+}
+if (blocks[1]) {
+  blocks[1].querySelector('.site-name').value = 'Bangalore';
+  blocks[1].querySelector('.ramp-target').value = 140;
+  blocks[1].querySelector('.trainers').value = 2;
+  blocks[1].querySelector('.room-count').value = 2;
+  blocks[1].querySelector('.first-onboard').value = '2026-04-24';
+  blocks[1].querySelector('.both-shifts').checked = false;
+  blocks[1].querySelector('.shift-mode').value = 'Morning Only';
+  blocks[1].querySelector('.sme-enabled').checked = true;
+  toggleSmeRatio(blocks[1].querySelector('.sme-enabled'));
+  blocks[1].querySelector('.sme-ratio').value = '10:1';
+  const rowA = blocks[1].querySelectorAll('.room-body tr');
+  rowA[0].children[0].querySelector('input').value = 'BLR Room 1';
+  rowA[0].children[1].querySelector('input').value = 20;
+  rowA[0].children[2].querySelector('select').value = 'Morning Only';
+  addRoomRow(blocks[1].querySelector('.head-actions .btn.btn-secondary'));
+  const rowB = blocks[1].querySelectorAll('.room-body tr');
+  rowB[1].children[0].querySelector('input').value = 'BLR Room 2';
+  rowB[1].children[1].querySelector('input').value = 25;
+  rowB[1].children[2].querySelector('select').value = 'Morning Only';
+}
+document.getElementById('processName').value = 'Myntra';
+document.getElementById('planningMonth').value = 'June 2026';
+syncLocationOptions();
+addRow('recruitmentBody', recruitmentRow());
+addRow('recruitmentBody', recruitmentRow());
+document.querySelectorAll('#recruitmentBody tr')[0].children[0].querySelector('select').value = 'Pune';
+document.querySelectorAll('#recruitmentBody tr')[0].children[1].querySelector('input').value = '2026-04-22';
+document.querySelectorAll('#recruitmentBody tr')[0].children[2].querySelector('input').value = '20';
+document.querySelectorAll('#recruitmentBody tr')[1].children[0].querySelector('select').value = 'Bangalore';
+document.querySelectorAll('#recruitmentBody tr')[1].children[1].querySelector('input').value = '2026-04-24';
+document.querySelectorAll('#recruitmentBody tr')[1].children[2].querySelector('input').value = '20';
+refreshKPIs();
+buildPreview();
 </script>
-
 </body>
 </html>
